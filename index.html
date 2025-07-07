@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Know How You Hear</title>
+    <!-- Ensure Chart.js loads correctly -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .instructions {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4682b4;
+        }
+        .reference-info {
+            background-color: #e6ffe6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #2e8b57;
+        }
+        .grid-container {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 800px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .freq-header {
+            background-color: #e6f2ff;
+            font-weight: bold;
+        }
+        .reference-header {
+            background-color: #e6ffe6;
+            font-weight: bold;
+        }
+        .step-cell {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .db-cell {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .chart-container {
+            height: 400px;
+            margin: 40px auto;
+            position: relative;
+            width: 95%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        .cell-clickable {
+            cursor: pointer;
+        }
+        .cell-clickable:hover {
+            background-color: #f0f0f0;
+        }
+        .cell-x {
+            background-color: #b3d9ff;
+            font-weight: bold;
+        }
+        .reference-x {
+            background-color: #b3ffb3;
+            font-weight: bold;
+        }
+        .results-table {
+            width: 100%;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .btn-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            color: white;
+        }
+        .btn-reset {
+            background-color: #f44336;
+        }
+        .btn-export {
+            background-color: #4CAF50;
+        }
+        .btn-calculate {
+            background-color: #2196F3;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Know How You Hear</h1>
+        
+        <div class="instructions">
+            <p>Mark with an "X" the last step you heard in each presentation (click on the corresponding cell).</p>
+            <p><strong>Important:</strong> The 4000 Hz tone is used as a reference for estimations. Make sure to mark this tone first.</p>
+        </div>
+        
+        <div class="reference-info" id="reference-info">
+            <p>You haven't selected the reference level yet. Please first mark where you hear the 4000 Hz tone.</p>
+        </div>
+        
+        <div class="grid-container">
+            <table id="audibility-table">
+                <thead>
+                    <tr id="header-row">
+                        <th>Step</th>
+                        <!-- Frequency headers are inserted dynamically -->
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows are inserted dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="btn-container">
+            <button class="btn btn-calculate" id="calculate-btn" onclick="calculateResults()" disabled>Calculate Results</button>
+            <button class="btn btn-reset" onclick="resetTable()">Reset Table</button>
+            <button class="btn btn-export" id="export-btn" onclick="exportToCSV()" disabled>Export Data</button>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="audiogram-chart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="audibility-chart"></canvas>
+        </div>
+        
+        <div class="results-container">
+            <h2>Results</h2>
+            <table class="results-table" id="results-table">
+                <thead>
+                    <tr>
+                        <th>Frequency (Hz)</th>
+                        <th>Audibility Threshold (dB)</th>
+                        <th>Difference (HL)</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Results are inserted dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <footer>
+            <p>&copy; 2025 Know How You Hear - GitHub Version</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Global variables
+        let referenceStep = null; // Reference step (4000 Hz)
+        let audiogramChart = null;
+        let audibilityChart = null;
+        let marks = {}; // To store X positions by column
+        let results = {}; // To store calculated results
+        
+        // Frequency definition (Hz)
+        const frequencies = [125, 250, 500, 1000, 2000, 4000, 8000, 12000];
+        
+        // Steps and decibels configuration
+        const stepsAndDB = [
+            {step: 1, dB: 55},
+            {step: 2, dB: 50},
+            {step: 3, dB: 45},
+            {step: 4, dB: 40},
+            {step: 5, dB: 35},
+            {step: 6, dB: 30},
+            {step: 7, dB: 25},
+            {step: 8, dB: 20},
+            {step: 9, dB: 15},
+            {step: 10, dB: 10},
+            {step: 11, dB: 5},
+            {step: 12, dB: 0},
+            {step: 13, dB: -5},
+            {step: 14, dB: -10},
+            {step: 15, dB: -15},
+            {step: 16, dB: -20}
+        ];
+        
+        // Standard reference values (ISO 1961, Robinson and Dadson, 1956)
+        const standardThresholds = [21.4, 11.2, 6, 4.2, 1, -3.9, 15.3, 12];
+        
+        // Execute initialisation when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTable();
+            // Ensure Chart.js is loaded before initialising charts
+            setTimeout(initializeCharts, 500);
+        });
+        
+        // Initialise the table
+        function initializeTable() {
+            // Add frequency headers
+            const headerRow = document.getElementById('header-row');
+            
+            frequencies.forEach(freq => {
+                const th = document.createElement('th');
+                th.classList.add(freq === 4000 ? 'reference-header' : 'freq-header');
+                th.textContent = `${freq} Hz`;
+                headerRow.appendChild(th);
+            });
+            
+            // Create table rows
+            const tableBody = document.getElementById('table-body');
+            stepsAndDB.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Step cell (we don't show the dB)
+                const stepCell = document.createElement('td');
+                stepCell.classList.add('step-cell');
+                stepCell.textContent = item.step;
+                row.appendChild(stepCell);
+                
+                // Cells for each frequency
+                frequencies.forEach(freq => {
+                    const cell = document.createElement('td');
+                    cell.classList.add('cell-clickable');
+                    cell.dataset.step = item.step;
+                    cell.dataset.freq = freq;
+                    cell.dataset.db = item.dB;
+                    
+                    // Add click event
+                    cell.addEventListener('click', function() {
+                        handleCellClick(this);
+                    });
+                    
+                    row.appendChild(cell);
+                });
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Handle cell click
+        function handleCellClick(cell) {
+            const freq = parseInt(cell.dataset.freq);
+            const step = parseInt(cell.dataset.step);
+            
+            // If there's already an X in this column, remove it
+            if (marks[freq]) {
+                const oldCell = document.querySelector(`td[data-freq="${freq}"][data-step="${marks[freq]}"]`);
+                if (oldCell) {
+                    oldCell.textContent = '';
+                    oldCell.classList.remove('cell-x', 'reference-x');
+                }
+            }
+            
+            // Put X in the current cell
+            cell.textContent = 'X';
+            
+            // If it's 4000 Hz, mark as reference
+            if (freq === 4000) {
+                cell.classList.add('reference-x');
+                referenceStep = step;
+                updateReferenceInfo();
+            } else {
+                cell.classList.add('cell-x');
+            }
+            
+            marks[freq] = step;
+            
+            // Enable buttons if we have the reference (4000 Hz) marked
+            if (marks[4000]) {
+                document.getElementById('calculate-btn').disabled = false;
+                if (Object.keys(marks).length > 1) {
+                    document.getElementById('export-btn').disabled = false;
+                }
+            }
+        }
+        
+        // Update reference information
+        function updateReferenceInfo() {
+            const infoDiv = document.getElementById('reference-info');
+            
+            if (referenceStep !== null) {
+                infoDiv.innerHTML = `
+                    <p><strong>Reference level established:</strong> Step ${referenceStep} at 4000 Hz.</p>
+                    <p>This level will be considered as 0 dB for calculations. Previous steps will have positive values and subsequent steps will have negative values, varying in 5 dB increments.</p>
+                `;
+            } else {
+                infoDiv.innerHTML = `
+                    <p>You haven't selected the reference level yet. Please first mark where you hear the 4000 Hz tone.</p>
+                `;
+            }
+        }
+        
+        // Calculate and display results
+        function calculateResults() {
+            if (!marks[4000]) {
+                alert('You must first mark the reference tone (4000 Hz).');
+                return;
+            }
+            
+            const resultsBody = document.getElementById('results-body');
+            resultsBody.innerHTML = '';
+            
+            const audibilityData = [];
+            const audiogramData = [];
+            results = {};
+            
+            // For each frequency
+            frequencies.forEach((freq, index) => {
+                if (marks[freq]) {
+                    // Get the step marked with X
+                    const step = marks[freq];
+                    
+                    // Calculate dB relative to reference step (4000 Hz)
+                    // If it's the reference step, it will be 0 dB
+                    // For previous steps, add 5 dB per step (more audible)
+                    // For subsequent steps, subtract 5 dB per step (less audible)
+                    const calculatedDB = (referenceStep - step) * 5;
+                    
+                    // Calculate difference with standard threshold (audiogram)
+                    // The Hearing Level (HL) is the subject's threshold minus the standard threshold
+                    const difference = (calculatedDB - standardThresholds[index]).toFixed(1);
+                    
+                    // Save results
+                    results[freq] = {
+                        step: step,
+                        dB: calculatedDB,
+                        difference: difference
+                    };
+                    
+                    // Create row for results table
+                    const row = document.createElement('tr');
+                    
+                    const freqCell = document.createElement('td');
+                    freqCell.textContent = freq;
+                    
+                    const thresholdCell = document.createElement('td');
+                    thresholdCell.textContent = calculatedDB.toFixed(1);
+                    
+                    const diffCell = document.createElement('td');
+                    diffCell.textContent = difference;
+                    
+                    row.appendChild(freqCell);
+                    row.appendChild(thresholdCell);
+                    row.appendChild(diffCell);
+                    
+                    resultsBody.appendChild(row);
+                    
+                    // Data for charts
+                    audibilityData.push({
+                        x: freq,
+                        y: calculatedDB
+                    });
+                    
+                    audiogramData.push({
+                        x: freq,
+                        y: parseFloat(difference)
+                    });
+                }
+            });
+            
+            // Check that charts are initialised
+            if (audibilityChart && audiogramChart) {
+                // Update charts
+                updateCharts(audibilityData, audiogramData);
+            } else {
+                console.error("Charts are not initialised correctly");
+                alert("An error occurred with the charts. Please reload the page.");
+            }
+        }
+        
+        // Ensure charts are visible and appropriately sized
+        window.onload = function() {
+            // Re-render charts after everything is loaded
+            if (audiogramChart && audibilityChart) {
+                audiogramChart.resize();
+                audibilityChart.resize();
+            }
+        };
+        
+        // Initialise charts
+        function initializeCharts() {
+            try {
+                console.log("Initialising charts...");
+                
+                // Check that Chart is available
+                if (typeof Chart === 'undefined') {
+                    console.error("Chart.js is not loaded correctly");
+                    setTimeout(initializeCharts, 500); // Try again in 500ms
+                    return;
+                }
+                
+                // Audibility curve chart
+                const ctxAudibility = document.getElementById('audibility-chart');
+                if (!ctxAudibility) {
+                    console.error("audibility-chart element not found");
+                    return;
+                }
+                
+                audibilityChart = new Chart(ctxAudibility.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: frequencies.map(f => f.toString()), // Use explicit labels
+                        datasets: [
+                            {
+                                label: 'Your audibility threshold',
+                                data: [],
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                tension: 0.4,
+                                pointRadius: 6,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Standard thresholds (ISO 1961)',
+                                data: standardThresholds,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                tension: 0.4,
+                                pointRadius: 4,
+                                borderWidth: 2,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'category', // Use category instead of logarithmic for fixed labels
+                                title: {
+                                    display: true,
+                                    text: 'Frequency (Hz)',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Sound Pressure Level (dB)',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                min: -25,
+                                max: 60
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Minimum Audibility Curve',
+                                font: {
+                                    size: 18
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y} dB`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+                
+                // Audiogram chart
+                const ctxAudiogram = document.getElementById('audiogram-chart');
+                if (!ctxAudiogram) {
+                    console.error("audiogram-chart element not found");
+                    return;
+                }
+                
+                audiogramChart = new Chart(ctxAudiogram.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: frequencies.map(f => f.toString()), // Use explicit labels
+                        datasets: [
+                            {
+                                label: 'Your audiogram',
+                                data: [],
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                tension: 0.4,
+                                pointRadius: 6,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Normal hearing level (0 dB HL)',
+                                data: new Array(frequencies.length).fill(0), // Line at zero
+                                borderColor: 'rgba(0, 0, 0, 1)',
+                                backgroundColor: 'rgba(0, 0, 0, 0)',
+                                borderDash: [5, 5],
+                                tension: 0,
+                                pointRadius: 0,
+                                borderWidth: 3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'category', // Use category instead of logarithmic for fixed labels
+                                title: {
+                                    display: true,
+                                    text: 'Frequency (Hz)',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Hearing Level (dB re ISO 1961)',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                reverse: true, // Lower values mean better hearing
+                                min: -30,
+                                max: 80
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Audiogram',
+                                font: {
+                                    size: 18
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y} dB`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+                
+                console.log("Charts initialised correctly");
+            } catch (error) {
+                console.error("Error initialising charts:", error);
+            }
+        }
+        
+        // Update charts with new data
+        function updateCharts(audibilityData, audiogramData) {
+            try {
+                // Check that charts are initialised
+                if (!audibilityChart || !audiogramChart) {
+                    console.error("Charts are not initialised");
+                    return;
+                }
+                
+                // Convert data to format suitable for label-based charts
+                const audibilityValues = [];
+                const audiogramValues = [];
+                
+                // Initialise arrays with null values for all frequencies
+                for (let i = 0; i < frequencies.length; i++) {
+                    audibilityValues[i] = null;
+                    audiogramValues[i] = null;
+                }
+                
+                // Fill with available values
+                audibilityData.forEach(point => {
+                    const index = frequencies.indexOf(point.x);
+                    if (index !== -1) {
+                        audibilityValues[index] = point.y;
+                    }
+                });
+                
+                audiogramData.forEach(point => {
+                    const index = frequencies.indexOf(point.x);
+                    if (index !== -1) {
+                        audiogramValues[index] = point.y;
+                    }
+                });
+                
+                // Update datasets
+                audibilityChart.data.datasets[0].data = audibilityValues;
+                audiogramChart.data.datasets[0].data = audiogramValues;
+                
+                // Update charts
+                audibilityChart.update();
+                audiogramChart.update();
+                
+                console.log("Charts updated correctly");
+            } catch (error) {
+                console.error("Error updating charts:", error);
+            }
+        }
+        
+        // Reset table and results
+        function resetTable() {
+            try {
+                // Remove all X marks
+                document.querySelectorAll('.cell-x, .reference-x').forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('cell-x', 'reference-x');
+                });
+                
+                // Clear marks and results
+                marks = {};
+                results = {};
+                referenceStep = null;
+                
+                // Update reference information
+                updateReferenceInfo();
+                
+                // Clear results table
+                document.getElementById('results-body').innerHTML = '';
+                
+                // Disable buttons
+                document.getElementById('calculate-btn').disabled = true;
+                document.getElementById('export-btn').disabled = true;
+                
+                // Check that charts are initialised
+                if (audibilityChart && audiogramChart) {
+                    // Reset charts with null values
+                    const emptyData = new Array(frequencies.length).fill(null);
+                    audibilityChart.data.datasets[0].data = emptyData;
+                    audiogramChart.data.datasets[0].data = emptyData;
+                    audibilityChart.update();
+                    audiogramChart.update();
+                } else {
+                    console.warn("Could not reset charts because they are not initialised");
+                }
+                
+                console.log("Table reset correctly");
+            } catch (error) {
+                console.error("Error resetting table:", error);
+            }
+        }
+        
+        // Export results to CSV
+        function exportToCSV() {
+            if (Object.keys(results).length === 0) {
+                alert('No results to export. You must first calculate the results.');
+                return;
+            }
+            
+            let csvContent = "Frequency (Hz),Audibility Threshold (dB),Difference (HL)\n";
+            
+            frequencies.forEach(freq => {
+                if (results[freq]) {
+                    csvContent += `${freq},${results[freq].dB.toFixed(1)},${results[freq].difference}\n`;
+                }
+            });
+            
+            // Create a link to download the file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'know_how_you_hear_results.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
